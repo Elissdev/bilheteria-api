@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: user_bilheteria
+      POSTGRES_PASSWORD: senha_secreta
+      POSTGRES_DB: bilheteria_db
+    ports:
+      - "5432:5432"
