@@ -12,7 +12,7 @@ async function iniciar() {
     }
 
     app.listen(PORTA, () => {
-        console.log(`Bilheteria no ar na porta ${PORTA} — docs em /docs`);
+        console.log(`Bilheteria no ar na porta ${PORTA}. Docs em /docs`);
     });
 }
 
