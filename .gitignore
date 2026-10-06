@@ -2,3 +2,6 @@ node_modules/
 
 # Worktrees locais
 .worktrees/
+
+# Artefatos gerados pelos testes
+coverage/

@@ -1,25 +1,56 @@
 const knex = require('knex');
 
-// Configurando a conexão com o banco que subiu no Docker
+// Em produção (Render + Neon) a conexão vem de DATABASE_URL.
+// Localmente, cai no Postgres do docker-compose.
+function montarConexao() {
+    if (process.env.DATABASE_URL) {
+        return process.env.DATABASE_URL;
+    }
+
+    return {
+        host: process.env.PGHOST || '127.0.0.1',
+        port: Number(process.env.PGPORT) || 5432,
+        user: process.env.PGUSER || 'user_bilheteria',
+        password: process.env.PGPASSWORD || 'senha_secreta',
+        database: process.env.PGDATABASE || 'bilheteria_db',
+    };
+}
+
 const db = knex({
-  client: 'pg',
-  connection: {
-    host: '127.0.0.1',
-    user: 'user_bilheteria',
-    password: 'senha_secreta',
-    database: 'bilheteria_db'
-  }
+    client: 'pg',
+    connection: montarConexao(),
+    pool: { min: 0, max: 5 },
 });
 
-// Criando a Tabela de eventos automaticamente se ela não existir
-db.schema.hasTable('eventos').then((existe) => {
-  if (!existe) {
-    return db.schema.createTable('eventos', (tabela) => {
-      tabela.increments('id').primary(); // ID único do evento
-      tabela.string('nome').notNullable(); // Nome do evento 
-      tabela.integer('ingressos_disponiveis').notNullable(); // Quantidade de ingressos
-    });
-  }
-});
+// Cria a tabela de eventos caso ainda não exista (idempotente).
+async function garantirSchema() {
+    const existe = await db.schema.hasTable('eventos');
+
+    if (!existe) {
+        await db.schema.createTable('eventos', (tabela) => {
+            tabela.increments('id').primary();
+            tabela.string('nome').notNullable();
+            tabela.integer('ingressos_disponiveis').notNullable().defaultTo(0);
+            tabela.timestamps(true, true);
+        });
+    }
+}
+
+const EVENTOS_EXEMPLO = [
+    { nome: 'Show de Rock', ingressos_disponiveis: 500 },
+    { nome: 'Peça de Teatro', ingressos_disponiveis: 120 },
+    { nome: 'Final do Campeonato', ingressos_disponiveis: 80 },
+];
+
+// Popula a base com eventos de exemplo apenas se ela estiver vazia.
+async function semear() {
+    const linha = await db('eventos').count('* as total').first();
+
+    if (Number(linha.total) === 0) {
+        await db('eventos').insert(EVENTOS_EXEMPLO);
+    }
+}
 
 module.exports = db;
+module.exports.garantirSchema = garantirSchema;
+module.exports.semear = semear;

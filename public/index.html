@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bilheteria API — demo ao vivo</title>
+    <meta name="description" content="Demo ao vivo da Bilheteria API: Node.js, Express, PostgreSQL e 100% de cobertura de testes.">
+    <style>
+        :root {
+            --fundo: #0f1720;
+            --painel: #161f2b;
+            --borda: #24313f;
+            --texto: #eaf0f6;
+            --mudo: #9aa8b6;
+            --acento: #00d2df;
+            --ok: #31c48d;
+            --erro: #f98080;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            background: var(--fundo);
+            color: var(--texto);
+            line-height: 1.5;
+            padding: 24px;
+        }
+
+        .wrap { max-width: 980px; margin: 0 auto; }
+
+        header {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--borda);
+            padding-bottom: 16px;
+            margin-bottom: 20px;
+        }
+
+        h1 { font-size: 22px; }
+        h1 span { color: var(--acento); }
+        .sub { color: var(--mudo); font-size: 13px; margin-top: 4px; }
+        .acoes { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .acoes a { color: var(--acento); text-decoration: none; font-size: 14px; }
+
+        .status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--mudo); }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mudo); }
+        .dot.on { background: var(--ok); box-shadow: 0 0 0 4px rgba(49, 196, 141, .15); }
+
+        form {
+            background: var(--painel);
+            border: 1px solid var(--borda);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            display: grid;
+            gap: 10px;
+        }
+
+        form h2 { font-size: 15px; }
+        .linha { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        input {
+            font: inherit;
+            background: var(--fundo);
+            border: 1px solid var(--borda);
+            color: var(--texto);
+            border-radius: 8px;
+            padding: 9px 11px;
+        }
+
+        input#nome { flex: 1; min-width: 180px; }
+        input#qtd { width: 130px; }
+
+        button { font: inherit; border: none; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+        .btn-primario { background: var(--acento); color: #062024; font-weight: 600; }
+        .btn-ghost { background: transparent; color: var(--mudo); border: 1px solid var(--borda); }
+        button:disabled { opacity: .5; cursor: not-allowed; }
+
+        .msg { font-size: 13px; min-height: 18px; color: var(--mudo); }
+        .msg.erro { color: var(--erro); }
+        .msg.ok { color: var(--ok); }
+
+        .secao-titulo { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+        .secao-titulo h2 { font-size: 16px; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+
+        .card { background: var(--painel); border: 1px solid var(--borda); border-radius: 12px; padding: 16px; }
+        .card h3 { font-size: 16px; margin-bottom: 6px; }
+        .card .qtd { color: var(--mudo); font-size: 13px; }
+        .card.esgotado { opacity: .6; }
+        .card .botoes { margin-top: 12px; display: flex; gap: 8px; }
+
+        .vazio { color: var(--mudo); font-size: 14px; }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <header>
+            <div>
+                <h1>🎟️ Bilheteria <span>API</span></h1>
+                <p class="sub">Demo ao vivo — Node.js · Express · PostgreSQL · 100% de cobertura de testes</p>
+            </div>
+            <div class="acoes">
+                <span class="status"><span class="dot" id="dot"></span><span id="status-txt">verificando…</span></span>
+                <a href="/docs">Swagger /docs</a>
+                <a href="https://github.com/Elissdev/bilheteria-api">GitHub</a>
+            </div>
+        </header>
+
+        <form id="form-evento">
+            <h2>Novo evento</h2>
+            <div class="linha">
+                <input id="nome" placeholder="Nome do evento" required>
+                <input id="qtd" type="number" min="0" placeholder="Ingressos" required>
+                <button class="btn-primario" type="submit">Criar evento</button>
+            </div>
+            <p class="msg" id="form-msg"></p>
+        </form>
+
+        <div class="secao-titulo">
+            <h2>Eventos</h2>
+            <button class="btn-ghost" id="recarregar" type="button">Recarregar</button>
+        </div>
+        <div class="grid" id="lista"></div>
+        <p class="vazio" id="vazio" hidden>Nenhum evento ainda. Crie o primeiro acima 👆</p>
+    </div>
+
+    <script>
+        const lista = document.getElementById('lista');
+        const vazio = document.getElementById('vazio');
+        const formMsg = document.getElementById('form-msg');
+
+        async function api(caminho, opcoes) {
+            const resposta = await fetch(caminho, opcoes);
+            if (resposta.status === 204) return null;
+            const corpo = await resposta.json().catch(() => ({}));
+            if (!resposta.ok) throw new Error(corpo.erro || ('Erro ' + resposta.status));
+            return corpo;
+        }
+
+        function mostrarMsg(texto, tipo) {
+            formMsg.textContent = texto;
+            formMsg.className = 'msg' + (tipo ? ' ' + tipo : '');
+            if (!tipo) return;
+            setTimeout(() => { formMsg.textContent = ''; formMsg.className = 'msg'; }, 4000);
+        }
+
+        function cardEvento(evento) {
+            const esgotado = evento.ingressos_disponiveis <= 0;
+            const card = document.createElement('article');
+            card.className = 'card' + (esgotado ? ' esgotado' : '');
+            card.innerHTML =
+                '<h3></h3>' +
+                '<p class="qtd"></p>' +
+                '<div class="botoes">' +
+                '<button class="btn-primario" data-comprar ' + (esgotado ? 'disabled' : '') + '>Comprar 1</button>' +
+                '<button class="btn-ghost" data-remover>Remover</button>' +
+                '</div>';
+            card.querySelector('h3').textContent = evento.nome;
+            card.querySelector('.qtd').textContent = esgotado
+                ? 'Esgotado'
+                : evento.ingressos_disponiveis + ' ingressos disponíveis';
+            card.querySelector('[data-comprar]').addEventListener('click', () => comprar(evento.id));
+            card.querySelector('[data-remover]').addEventListener('click', () => remover(evento.id));
+            return card;
+        }
+
+        async function carregar() {
+            try {
+                const eventos = await api('/eventos');
+                lista.replaceChildren();
+                vazio.hidden = eventos.length > 0;
+                eventos.forEach((evento) => lista.appendChild(cardEvento(evento)));
+            } catch (erro) {
+                mostrarMsg('Não foi possível carregar os eventos: ' + erro.message, 'erro');
+            }
+        }
+
+        async function comprar(id) {
+            try {
+                await api('/eventos/' + id + '/comprar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ quantidade: 1 }),
+                });
+                mostrarMsg('Compra registrada! 🎉', 'ok');
+                carregar();
+            } catch (erro) {
+                mostrarMsg(erro.message, 'erro');
+            }
+        }
+
+        async function remover(id) {
+            try {
+                await api('/eventos/' + id, { method: 'DELETE' });
+                mostrarMsg('Evento removido.', 'ok');
+                carregar();
+            } catch (erro) {
+                mostrarMsg(erro.message, 'erro');
+            }
+        }
+
+        document.getElementById('form-evento').addEventListener('submit', async (evento) => {
+            evento.preventDefault();
+            const nome = document.getElementById('nome').value.trim();
+            const ingressos_disponiveis = Number(document.getElementById('qtd').value);
+            try {
+                await api('/eventos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, ingressos_disponiveis }),
+                });
+                document.getElementById('nome').value = '';
+                document.getElementById('qtd').value = '';
+                mostrarMsg('Evento criado! ✅', 'ok');
+                carregar();
+            } catch (erro) {
+                mostrarMsg(erro.message, 'erro');
+            }
+        });
+
+        document.getElementById('recarregar').addEventListener('click', carregar);
+
+        async function checarSaude() {
+            try {
+                await api('/health');
+                document.getElementById('dot').classList.add('on');
+                document.getElementById('status-txt').textContent = 'online';
+            } catch (erro) {
+                document.getElementById('status-txt').textContent = 'offline';
+            }
+        }
+
+        checarSaude();
+        carregar();
+    </script>
+</body>
+
+</html>

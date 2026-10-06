@@ -1,6 +1,19 @@
 const app = require('./app');
-const PORTA = 3000;
+const db = require('./db');
 
-app.listen(PORTA, () => {
-    console.log(`Servidor da Bilheteria ligado e aguardando a multidão na porta ${PORTA}!`);
-});
+const PORTA = process.env.PORT || 3000;
+
+async function iniciar() {
+    try {
+        await db.garantirSchema();
+        await db.semear();
+    } catch (erro) {
+        console.error('Aviso: não foi possível preparar o banco de dados.', erro.message);
+    }
+
+    app.listen(PORTA, () => {
+        console.log(`Bilheteria no ar na porta ${PORTA} — docs em /docs`);
+    });
+}
+
+iniciar();

@@ -1,0 +1,13 @@
+# Blueprint do Render (https://render.com/docs/blueprint-spec).
+# Sobe a API como Web Service e usa um Postgres externo (Neon) via DATABASE_URL.
+services:
+  - type: web
+    name: bilheteria-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false
