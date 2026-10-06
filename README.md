@@ -6,9 +6,9 @@
 
 ## 🔗 Demo ao vivo
 
-- **Aplicação (vitrine):** https://bilheteria-api.onrender.com
-- **Documentação (Swagger UI):** https://bilheteria-api.onrender.com/docs
-- **Healthcheck:** https://bilheteria-api.onrender.com/health
+- **Aplicação (vitrine):** https://bilheteria-api-uc0j.onrender.com
+- **Documentação (Swagger UI):** https://bilheteria-api-uc0j.onrender.com/docs
+- **Healthcheck:** https://bilheteria-api-uc0j.onrender.com/health
 
 > O plano gratuito do Render "dorme" o serviço após alguns minutos sem acesso; a primeira requisição pode levar ~30s para acordar.
 
