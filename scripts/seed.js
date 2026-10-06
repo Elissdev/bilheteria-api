@@ -1,4 +1,4 @@
-const db = require('./db');
+const db = require('../db');
 
 // Garante o schema e popula os eventos de exemplo. Usado por `npm run seed`.
 async function executar() {
