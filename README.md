@@ -111,8 +111,8 @@ docker build -t bilheteria-api .
 docker run -p 3000:3000 -e DATABASE_URL="postgres://..." bilheteria-api
 ```
 
-> **Keep-alive:** no plano free o Render hiberna após ~15 min sem acesso. O workflow
-> `.github/workflows/keep-alive.yml` pinga o `/health` a cada 10 minutos para evitar o cold start.
+> **Keep-alive:** no plano free o Render hiberna após ~15 min sem acesso. Um monitor externo
+> (ex.: [UptimeRobot](https://uptimerobot.com), grátis) pingando o `/health` a cada 5 minutos mantém o serviço acordado.
 
 ## 📁 Estrutura
 
