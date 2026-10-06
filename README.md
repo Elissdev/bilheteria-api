@@ -1,6 +1,8 @@
 # 🎟️ Bilheteria API
 
 [![CI](https://github.com/Elissdev/bilheteria-api/actions/workflows/ci.yml/badge.svg)](https://github.com/Elissdev/bilheteria-api/actions/workflows/ci.yml)
+[![Uptime](https://img.shields.io/uptimerobot/status/m804193217-e7bd676597b193950077b311)](https://bilheteria-api-uc0j.onrender.com/health)
+[![Uptime 7 dias](https://img.shields.io/uptimerobot/ratio/7/m804193217-e7bd676597b193950077b311)](https://bilheteria-api-uc0j.onrender.com/health)
 
 > API REST de bilheteria construída em **Node.js + Express + PostgreSQL**, com documentação interativa (Swagger), vitrine própria consumindo a API e **100% de cobertura de testes**.
 
